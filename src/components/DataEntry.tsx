@@ -15,7 +15,11 @@ import Papa from "papaparse";
 import { useDataStore } from "../store/dataStore";
 import axios from "axios";
 
-export default function DataEntry() {
+interface DataEntryProps {
+  onPredictionComplete?: (results: any[]) => void;
+}
+
+export default function DataEntry({ onPredictionComplete }: DataEntryProps = {}) {
   const { rows, setCell, addRow, setRows } = useDataStore();
   
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -53,21 +57,23 @@ export default function DataEntry() {
       // rename headers + build row objects
       const { newHeaders, rowObjects } = renameRows(importHeaders, importRows);
   
-      const response = await axios.post("http://127.0.0.1:8000/api/from-table", {
+      const response = await axios.post("http://127.0.0.1:8000/api/predict/from-table", {
         columns: newHeaders,
         rows: rowObjects,
       });
   
       console.log("Prediction response:", response.data);
+      
+      // Pass results to parent component if callback exists
+      if (response.data.ok && response.data.rows && onPredictionComplete) {
+        onPredictionComplete(response.data.rows);
+      }
     } catch (err) {
       console.error("Error sending data to backend:", err);
+      alert("Error making prediction. Check console for details.");
     }
   };
   
-    
-
-  // inside DataEntry.tsx
-
   const [importHeaders, setImportHeaders] = useState<string[]>([]);
   const [importRows, setImportRows] = useState<string[][]>([]);
 
@@ -135,8 +141,6 @@ export default function DataEntry() {
   
     e.currentTarget.value = "";
   };
-  
-
 
   const clearImport = () => setImportRows([]);
 
@@ -198,7 +202,6 @@ export default function DataEntry() {
           ) : (
             <Text color="dimmed">No CSV loaded yet.</Text>
           )}
-
 
           <Group mt="md">
             <Button color="dark" variant="filled" onClick={onPredict}>
