@@ -40,6 +40,7 @@ export default function BackgroundCanvas({ controlsEnabled = false }: Background
           enablePan
           enableZoom
           enableRotate
+          makeDefault
           // make sure left mouse rotates etc:
           mouseButtons={{
             LEFT: THREE.MOUSE.ROTATE,
