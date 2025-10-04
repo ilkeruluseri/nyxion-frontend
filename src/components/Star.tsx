@@ -1,5 +1,3 @@
-import * as THREE from "three";
-
 interface StarProps {
   radius?: number;
   color?: string;

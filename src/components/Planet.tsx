@@ -76,18 +76,37 @@ export default function Planet({
     argumentOfPeriapsis,
   ]);
 
-  // Animate planet motion in 2D plane (focus-corrected)
-  useFrame(({ clock }) => {
-    if (!planetRef.current) return;
-    const t = (clock.getElapsedTime() * orbitSpeed) % 1;
-    const angle = t * 2 * Math.PI;
+  
 
-    let x = a * Math.cos(angle);
-    let y = a * Math.sqrt(1 - e ** 2) * Math.sin(angle);
-    x -= a * e;
-
-    planetRef.current.position.set(x, y, 0);
-  });
+    // Animate planet motion with Keplerian speed (faster near periapsis)
+    useFrame(({ clock }) => {
+        if (!planetRef.current) return;
+    
+        const time = clock.getElapsedTime() * orbitSpeed;
+        const M = (time * 2 * Math.PI) % (2 * Math.PI); // mean anomaly
+    
+        // Solve Kepler’s equation: M = E - e * sin(E)
+        let E = M;
+        for (let i = 0; i < 5; i++) {
+          E = M + e * Math.sin(E); // Newton–Raphson iteration
+        }
+    
+        // Convert eccentric anomaly to true anomaly
+        const ν = 2 * Math.atan2(
+          Math.sqrt(1 + e) * Math.sin(E / 2),
+          Math.sqrt(1 - e) * Math.cos(E / 2)
+        );
+    
+        // Radius at current position (distance from focus)
+        const r = a * (1 - e * Math.cos(E));
+    
+        // Convert to Cartesian coordinates
+        const x = r * Math.cos(ν);
+        const y = r * Math.sin(ν);
+    
+        planetRef.current.position.set(x, y, 0);
+      });
+    
 
   return (
     <group ref={orbitRef}>
