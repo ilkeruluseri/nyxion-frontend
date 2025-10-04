@@ -24,6 +24,7 @@ import {
   interface ResultsTableProps {
     results: PredictionResult[];
     onViewVisualization: () => void;
+    modelId?: string;
   }
   
   export default function ResultsTable({ results, onViewVisualization }: ResultsTableProps) {

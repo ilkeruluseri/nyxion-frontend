@@ -17,9 +17,13 @@ import axios from "axios";
 
 interface DataEntryProps {
   onPredictionComplete?: (results: any[]) => void;
+  modelId?: string; // ← EKLENDİ (opsiyonel)
 }
 
-export default function DataEntry({ onPredictionComplete }: DataEntryProps = {}) {
+export default function DataEntry({
+  onPredictionComplete,
+  modelId = "cascade-v1", // ← default
+}: DataEntryProps) {
   const { rows, setCell, addRow, setRows } = useDataStore();
   
   const fileInputRef = useRef<HTMLInputElement | null>(null);
