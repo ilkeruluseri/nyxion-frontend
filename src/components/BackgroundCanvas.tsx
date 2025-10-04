@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { StarBackground } from "./StarBackground";
+import PlanetOrbitVisualization from "./PlanetOrbitVisualization";
 import * as THREE from "three";
 
 interface BackgroundCanvasProps {
@@ -26,11 +27,8 @@ export default function BackgroundCanvas({ controlsEnabled = false }: Background
       >
         <StarBackground textureUrl="/8k_stars.jpg" />
 
-        {/* test clickable mesh — will log when clicked */}
-        <mesh position={[2, 0, 0]} onPointerDown={() => console.log("mesh clicked")}>
-          <sphereGeometry args={[0.3, 32, 32]} />
-          <meshStandardMaterial color="orange" />
-        </mesh>
+        {/* Orbit visualization — visible throughout */}
+        <PlanetOrbitVisualization />
 
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />

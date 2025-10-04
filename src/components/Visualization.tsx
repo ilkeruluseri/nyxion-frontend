@@ -9,7 +9,7 @@ export default function Visualization() {
             <Canvas camera={{ position: [0, 0, 5] }}>
             <StarBackground textureUrl="/8k_stars.jpg" />
 
-            <mesh position={[2, 0, 0]}>
+            <mesh position={[0, 0, 0]}>
                 <sphereGeometry args={[0.3, 32, 32]} />
                 <meshStandardMaterial color="orange" />
             </mesh>
