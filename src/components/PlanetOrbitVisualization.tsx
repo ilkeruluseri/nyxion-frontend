@@ -1,8 +1,25 @@
-// PlanetOrbitVisualization.tsx
 import Star from "./Star";
 import Planet from "./Planet";
 
-export default function PlanetOrbitVisualization() {
+export interface PlanetConfig {
+  planetRadius: number;
+  orbitSpeed: number;
+  semiMajorAxis?: number;
+  eccentricity?: number;
+  inclination?: number;
+  longitudeOfAscendingNode?: number;
+  argumentOfPeriapsis?: number;
+  orbitRadius?: number; // for circular orbits
+  color?: string;
+}
+
+interface PlanetOrbitVisualizationProps {
+  planets: PlanetConfig[];
+}
+
+export default function PlanetOrbitVisualization({
+  planets,
+}: PlanetOrbitVisualizationProps) {
   return (
     <>
       <color attach="background" args={["black"]} />
@@ -12,36 +29,10 @@ export default function PlanetOrbitVisualization() {
       {/* Central Star */}
       <Star radius={0.4} color="orange" />
 
-      {/* Planet #1 (simple circular orbit) */}
-      <Planet
-        planetRadius={0.1}
-        orbitRadius={2}
-        orbitSpeed={0.5}
-        color="lightblue"
-      />
-
-      {/* Planet #2 (elliptical + tilted orbit) */}
-      <Planet
-        planetRadius={0.15}
-        orbitSpeed={0.3}
-        semiMajorAxis={3.5}
-        eccentricity={0.4}
-        inclination={10}
-        longitudeOfAscendingNode={40}
-        argumentOfPeriapsis={20}
-        color="lightgreen"
-      />
-
-      <Planet
-        planetRadius={0.25}
-        orbitSpeed={0.4}
-        semiMajorAxis={4.5}
-        eccentricity={0.4}
-        inclination={-10}
-        longitudeOfAscendingNode={40}
-        argumentOfPeriapsis={30}
-        color="red"
-      />
+      {/* Planets (from props) */}
+      {planets.map((planet, index) => (
+        <Planet key={index} {...planet} />
+      ))}
     </>
   );
 }
