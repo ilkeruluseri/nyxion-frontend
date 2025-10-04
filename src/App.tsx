@@ -26,7 +26,7 @@ function App() {
     const onScroll = () => {
       if (!vizRef.current) return;
       const rect = vizRef.current.getBoundingClientRect();
-      const inView = rect.top < window.innerHeight && rect.bottom > 0;
+      const inView = rect.top < window.innerHeight * 0.5 && rect.bottom > window.innerHeight * 0.5;
       setControlsEnabled(inView);
       console.log("Controls enabled:", inView);
     };
@@ -57,9 +57,9 @@ function App() {
     <>
       {/* Canvas fixed behind UI — use zIndex 0 (not -1) so it can receive events */}
       <BackgroundCanvas controlsEnabled={controlsEnabled} />
-
+  
       {/* Foreground UI above canvas */}
-      <div style={{ position: "relative", zIndex: 10 }}>
+      <div style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}> {/* ← pointerEvents: "none" EKLE */}
         <Container
           style={{
             height: "100vh",
@@ -67,28 +67,34 @@ function App() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
+            pointerEvents: "auto", // ← Container'da auto yap
           }}
         >
           <Title order={1}>Welcome</Title>
           <DataEntry onPredictionComplete={handlePredictionComplete} />
-          <Button onClick={scrollToVisualization}>Go to Visualization</Button>
         </Container>
+  
         {/* Results section */}
         {predictionResults.length > 0 && (
-                  <div
-                    ref={resultsRef}
-                    style={{
-                      minHeight: "100vh",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      paddingTop: "2rem",
-                      paddingBottom: "2rem",
-                    }}
-                  >
-                    <ResultsTable results={predictionResults} />
-                  </div>
-                )}
+          <div
+            ref={resultsRef}
+            style={{
+              minHeight: "100vh",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              paddingTop: "2rem",
+              paddingBottom: "2rem",
+              pointerEvents: "auto", // ← EKLE
+            }}
+          >
+            <ResultsTable 
+              results={predictionResults} 
+              onViewVisualization={scrollToVisualization}
+            />
+          </div>
+        )}
+        
         {/* Viz section */}
         <div
           ref={vizRef}
@@ -97,7 +103,7 @@ function App() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            pointerEvents: "none",
+            pointerEvents: "none", // Bu zaten var - doğru
           }}
         >
           <div
@@ -106,6 +112,8 @@ function App() {
               background: "rgba(0,0,0,0.5)",
               padding: 20,
               borderRadius: 8,
+              maxWidth: "500px",
+              margin: "0 auto",
             }}
           >
             <Title order={2} style={{ color: "white" }}>
@@ -116,9 +124,7 @@ function App() {
             </Text>
           </div>
         </div>
-
-       
-
+        
         {/* extra content so page can scroll */}
         <div style={{ height: "50vh", background: "transparent" }} />
       </div>

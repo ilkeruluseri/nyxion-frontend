@@ -62,11 +62,21 @@ export default function DataEntry({ onPredictionComplete }: DataEntryProps = {})
         rows: rowObjects,
       });
   
-      console.log("Prediction response:", response.data);
+      console.log("Full Prediction response:", response.data);
+      console.log("Response.data.rows:", response.data.rows);
+      console.log("onPredictionComplete exists?", !!onPredictionComplete);
       
       // Pass results to parent component if callback exists
-      if (response.data.ok && response.data.rows && onPredictionComplete) {
-        onPredictionComplete(response.data.rows);
+      if (response.data.ok && response.data.rows) {
+        console.log("About to call onPredictionComplete with:", response.data.rows);
+        if (onPredictionComplete) {
+          onPredictionComplete(response.data.rows);
+          console.log("onPredictionComplete called successfully");
+        } else {
+          console.error("onPredictionComplete is undefined!");
+        }
+      } else {
+        console.error("Invalid response format:", response.data);
       }
     } catch (err) {
       console.error("Error sending data to backend:", err);

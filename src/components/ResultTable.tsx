@@ -5,6 +5,7 @@ import {
     Badge,
     ScrollArea,
     Container,
+    Button,
   } from "@mantine/core";
   
   interface PredictionResult {
@@ -22,17 +23,18 @@ import {
   
   interface ResultsTableProps {
     results: PredictionResult[];
+    onViewVisualization: () => void;
   }
   
-  export default function ResultsTable({ results }: ResultsTableProps) {
+  export default function ResultsTable({ results, onViewVisualization }: ResultsTableProps) {
     if (!results || results.length === 0) {
       return null;
     }
   
     const getConfidenceColor = (confidence: number | string) => {
       const conf = typeof confidence === 'string' ? parseFloat(confidence) : confidence;
-      if (conf >= 0.5) return "green";
-      if (conf >= 0.3) return "yellow";
+      if (conf >= 0.7) return "green";
+      if (conf >= 0.5) return "yellow";
       return "red";
     };
   
@@ -74,7 +76,7 @@ import {
             highlightOnHover
             withColumnBorders
             withRowBorders
-            style={{ minWidth: 900 }}
+            style={{ minWidth: 1000 }}
           >
             <Table.Thead>
               <Table.Tr>
@@ -87,6 +89,7 @@ import {
                 <Table.Th style={{ color: "white" }}>Smass (MSun)</Table.Th>
                 <Table.Th style={{ color: "white" }}>Prediction</Table.Th>
                 <Table.Th style={{ color: "white" }}>Confidence</Table.Th>
+                <Table.Th style={{ color: "white" }}>Action</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -134,6 +137,22 @@ import {
                           {isNaN(conf) ? row.confidence : (conf * 100).toFixed(1) + '%'}
                         </Badge>
                       </Table.Td>
+                                        <Table.Td>
+                    {(row.prediction === "1" || row.prediction === "2") ? (
+                        <Button 
+                        size="xs" 
+                        variant="light" 
+                        color="cyan"
+                        onClick={onViewVisualization}
+                        >
+                        View in 3D
+                        </Button>
+                    ) : (
+                        <Text size="xs" style={{ color: "#999", fontStyle: "italic" }}>
+                        Not an exoplanet
+                        </Text>
+                    )}
+                    </Table.Td>
                     </Table.Tr>
                   );
                 } catch (error) {
