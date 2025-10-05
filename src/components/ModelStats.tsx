@@ -10,6 +10,7 @@ import {
   Badge,
   Alert,
   Space,
+  Stack,
 } from "@mantine/core";
 
 // === Data types ===
@@ -24,9 +25,9 @@ export interface ModelStatsPayload {
     macro_f1?: number;
     weighted_f1?: number;
     auc_macro?: number;
-    cand_f1?: number;   // kept in type for compatibility, not shown in UI
-    cand_prec?: number; // kept in type for compatibility, not shown in UI
-    cand_rec?: number;  // kept in type for compatibility, not shown in UI
+    cand_f1?: number;
+    cand_prec?: number;
+    cand_rec?: number;
   };
   per_class?: Array<{
     label: "FALSE POSITIVE" | "CANDIDATE" | "CONFIRMED";
@@ -44,12 +45,11 @@ const XGB_STATS: ModelStatsPayload = {
   model_name: "xgb_koi_star",
   version: "2025.10.05-groupsplit",
   trained_at: "2025-10-05",
-  dataset: "cumulative_2025.10.03_03.20.15.csv (kepid group split)",
+  dataset: "Kepler Objects of Interest (KOI)",
   metrics: {
     accuracy: 0.9,
     macro_f1: 0.869,
     weighted_f1: 0.9,
-    // auc_macro intentionally omitted in mock to show em-dash fallback
     cand_f1: 0.77,
     cand_prec: 0.78,
     cand_rec: 0.77,
@@ -66,10 +66,13 @@ const XGB_STATS: ModelStatsPayload = {
   ],
 };
 
-// === Mock fetch (wire to API later) ===
+// === Mock fetch ===
 async function fetchModelStats(): Promise<ModelStatsPayload> {
   return XGB_STATS;
 }
+
+const CLASS_LABELS = ["FALSE POSITIVE", "CANDIDATE", "CONFIRMED"];
+const CLASS_COLORS = ["#868e96", "#868e96", "#868e96"];
 
 // === Component ===
 export default function ModelStats({ modelId }: { modelId: string }) {
@@ -113,8 +116,18 @@ export default function ModelStats({ modelId }: { modelId: string }) {
 
   const { model_name, version, trained_at, dataset, metrics, per_class, confusion_matrix } = data;
 
+  // Calculate confusion matrix percentages for better visualization
+  const confusionWithPercent = (confusion_matrix ?? []).map((row, i) => {
+    const total = row.reduce((sum, val) => sum + val, 0);
+    return row.map((val, j) => ({
+      value: val,
+      percent: total > 0 ? (val / total) * 100 : 0,
+      isCorrect: i === j,
+    }));
+  });
+
   return (
-    <>
+    <Stack gap="lg">
       {/* Header */}
       <Group align="baseline" justify="space-between">
         <div>
@@ -128,43 +141,113 @@ export default function ModelStats({ modelId }: { modelId: string }) {
         </Badge>
       </Group>
 
-      <Space h="md" />
-
       {/* Overall metrics */}
       <Grid gutter="md">
-        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+        <Grid.Col span={{ base: 12, sm: 4 }}>
           <Card withBorder>
-            <Text fw={600}>Accuracy</Text>
-            <Title order={3}>{fmt(metrics.accuracy)}</Title>
+            <Text fw={600} size="sm" c="dimmed">Accuracy</Text>
+            <Title order={2}>{fmt(metrics.accuracy)}</Title>
           </Card>
         </Grid.Col>
-        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+        <Grid.Col span={{ base: 12, sm: 4 }}>
           <Card withBorder>
-            <Text fw={600}>Macro F1</Text>
-            <Title order={3}>{fmt(metrics.macro_f1)}</Title>
+            <Text fw={600} size="sm" c="dimmed">Macro F1</Text>
+            <Title order={2}>{fmt(metrics.macro_f1)}</Title>
           </Card>
         </Grid.Col>
-        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+        <Grid.Col span={{ base: 12, sm: 4 }}>
           <Card withBorder>
-            <Text fw={600}>Weighted F1</Text>
-            <Title order={3}>{fmt(metrics.weighted_f1)}</Title>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-          <Card withBorder>
-            <Text fw={600}>AUC (macro)</Text>
-            <Title order={3}>{fmt(metrics.auc_macro)}</Title>
+            <Text fw={600} size="sm" c="dimmed">Weighted F1</Text>
+            <Title order={2}>{fmt(metrics.weighted_f1)}</Title>
           </Card>
         </Grid.Col>
       </Grid>
 
-      <Space h="lg" />
+      {/* Per-Class Metrics Chart */}
+      <Card withBorder>
+        <Title order={4}>Per-Class Performance</Title>
+        <Space h="md" />
+        
+        <Stack gap="md">
+          {(per_class ?? []).map((classData, _idx) => (
+            <div key={classData.label}>
+              <Text size="sm" fw={500} mb="xs">{classData.label}</Text>
+              
+              <Stack gap="xs">
+                <div>
+                  <Group justify="space-between" mb={4}>
+                    <Text size="xs" c="dimmed">Precision</Text>
+                    <Text size="xs" fw={500}>{fmt(classData.precision)}</Text>
+                  </Group>
+                  <div style={{ 
+                    width: '100%', 
+                    height: 8, 
+                    backgroundColor: '#f1f3f5', 
+                    borderRadius: 4,
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${classData.precision * 100}%`, 
+                      height: '100%', 
+                      backgroundColor: '#495057',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
 
-      {/* Per-class metrics */}
+                <div>
+                  <Group justify="space-between" mb={4}>
+                    <Text size="xs" c="dimmed">Recall</Text>
+                    <Text size="xs" fw={500}>{fmt(classData.recall)}</Text>
+                  </Group>
+                  <div style={{ 
+                    width: '100%', 
+                    height: 8, 
+                    backgroundColor: '#f1f3f5', 
+                    borderRadius: 4,
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${classData.recall * 100}%`, 
+                      height: '100%', 
+                      backgroundColor: '#495057',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+
+                <div>
+                  <Group justify="space-between" mb={4}>
+                    <Text size="xs" c="dimmed">F1-Score</Text>
+                    <Text size="xs" fw={500}>{fmt(classData.f1)}</Text>
+                  </Group>
+                  <div style={{ 
+                    width: '100%', 
+                    height: 8, 
+                    backgroundColor: '#f1f3f5', 
+                    borderRadius: 4,
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${classData.f1 * 100}%`, 
+                      height: '100%', 
+                      backgroundColor: '#495057',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+              </Stack>
+            </div>
+          ))}
+        </Stack>
+      </Card>
+
+      {/* Detailed table and confusion matrix */}
       <Grid gutter="md">
-        <Grid.Col span={{ base: 12, md: 6 }}>
+        {/* Per-class metrics table */}
+        <Grid.Col span={{ base: 12, lg: 6 }}>
           <Card withBorder>
-            <Title order={4}>Per-Class Metrics</Title>
+            <Title order={4}>Detailed Metrics</Title>
             <Space h="sm" />
             <Table striped withTableBorder withColumnBorders highlightOnHover>
               <Table.Thead>
@@ -172,14 +255,19 @@ export default function ModelStats({ modelId }: { modelId: string }) {
                   <Table.Th>Class</Table.Th>
                   <Table.Th>Precision</Table.Th>
                   <Table.Th>Recall</Table.Th>
-                  <Table.Th>F1</Table.Th>
+                  <Table.Th>F1-Score</Table.Th>
                   <Table.Th>Support</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {(per_class ?? []).map((r) => (
+                {(per_class ?? []).map((r, idx) => (
                   <Table.Tr key={r.label}>
-                    <Table.Td>{r.label}</Table.Td>
+                    <Table.Td>
+                      <Group gap="xs">
+                        <div style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: CLASS_COLORS[idx] }} />
+                        <Text size="sm" fw={500}>{r.label}</Text>
+                      </Group>
+                    </Table.Td>
                     <Table.Td>{fmt(r.precision)}</Table.Td>
                     <Table.Td>{fmt(r.recall)}</Table.Td>
                     <Table.Td>{fmt(r.f1)}</Table.Td>
@@ -192,39 +280,75 @@ export default function ModelStats({ modelId }: { modelId: string }) {
         </Grid.Col>
 
         {/* Confusion matrix */}
-        <Grid.Col span={{ base: 12, md: 6 }}>
+        <Grid.Col span={{ base: 12, lg: 6 }}>
           <Card withBorder>
             <Title order={4}>Confusion Matrix</Title>
-            <Text size="sm" c="dimmed">
-              Rows = True, Columns = Predicted
+            <Text size="sm" c="dimmed" mb="sm">
+              Rows: True Label • Columns: Predicted Label
             </Text>
-            <Space h="sm" />
-            <Table withTableBorder withColumnBorders>
-              <Table.Tbody>
-                {(confusion_matrix ?? []).map((row, i) => (
-                  <Table.Tr key={i}>
-                    {row.map((v, j) => (
-                      <Table.Td
-                        key={`${i}-${j}`}
-                        style={{ textAlign: "center", fontWeight: 600 }}
-                      >
-                        {v}
-                      </Table.Td>
+            
+            <div style={{ overflowX: "auto" }}>
+              <Table withTableBorder withColumnBorders style={{ minWidth: 400 }}>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th style={{ textAlign: "center", fontWeight: 700 }}>True \ Pred</Table.Th>
+                    {CLASS_LABELS.map((label) => (
+                      <Table.Th key={label} style={{ textAlign: "center", fontWeight: 700, fontSize: 11 }}>
+                        {label.split(" ")[0]}
+                      </Table.Th>
                     ))}
                   </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+                </Table.Thead>
+                <Table.Tbody>
+                  {confusionWithPercent.map((row, i) => (
+                    <Table.Tr key={i}>
+                      <Table.Td style={{ textAlign: "center", fontWeight: 700, fontSize: 11 }}>
+                        {CLASS_LABELS[i].split(" ")[0]}
+                      </Table.Td>
+                      {row.map((cell, j) => (
+                        <Table.Td
+                          key={`${i}-${j}`}
+                          style={{
+                            textAlign: "center",
+                            fontWeight: cell.isCorrect ? 600 : 400,
+                            backgroundColor: cell.isCorrect 
+                              ? `rgba(73, 80, 87, ${0.05 + cell.percent / 400})` 
+                              : cell.value > 0 
+                              ? `rgba(222, 226, 230, ${cell.percent / 300})` 
+                              : undefined,
+                          }}
+                        >
+                          <div>
+                            <Text size="sm" fw={cell.isCorrect ? 700 : 500}>{cell.value}</Text>
+                            <Text size="xs" c="dimmed">({cell.percent.toFixed(1)}%)</Text>
+                          </div>
+                        </Table.Td>
+                      ))}
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </div>
+            
+            <Space h="xs" />
+            <Group justify="center" gap="md">
+              <Group gap="xs">
+                <div style={{ width: 12, height: 12, backgroundColor: "rgba(73, 80, 87, 0.2)" }} />
+                <Text size="xs" c="dimmed">Correct</Text>
+              </Group>
+              <Group gap="xs">
+                <div style={{ width: 12, height: 12, backgroundColor: "rgba(222, 226, 230, 0.5)" }} />
+                <Text size="xs" c="dimmed">Errors</Text>
+              </Group>
+            </Group>
           </Card>
         </Grid.Col>
       </Grid>
-
-      {/* Candidate-specific section intentionally removed */}
-    </>
+    </Stack>
   );
 }
 
-// === Small helpers ===
+// === Helper ===
 function fmt(n?: number) {
-  return typeof n === "number" ? n.toFixed(2) : "—";
+  return typeof n === "number" ? n.toFixed(3) : "—";
 }

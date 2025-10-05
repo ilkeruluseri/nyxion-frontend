@@ -4,7 +4,7 @@ import {
   Badge,
   Button,
   Card,
-  Code,
+
   FileInput,
   Grid,
   Group,
@@ -13,7 +13,7 @@ import {
   SimpleGrid,
   Space,
   Stack,
-  Table,
+
   Text,
   Textarea,
   Title,
@@ -41,16 +41,15 @@ interface TrainStatus {
     cand_prec?: number;
     cand_rec?: number;
   };
-  model_id?: string;        // e.g., "models/xgb_koi_finetuned_....joblib"
-  manifest_path?: string;   // e.g., "models/xgb_koi_finetuned_....joblib.manifest.json"
-  metrics_path?: string;    // e.g., "models/xgb_koi_finetuned_....joblib.metrics.json"
+  model_id?: string;       
+  manifest_path?: string;  
+  metrics_path?: string;   
   error?: string;
 }
 
 export default function Train({
   selectedModel,
-  onSwitchToStats,
-  onModelSelected,
+
 }: {
   selectedModel: string; // base model to warm-start from (required)
   onSwitchToStats: () => void;
@@ -77,6 +76,8 @@ export default function Train({
 
   if (jobId && jobId === "12342312")
     console.log(jobId);
+  if (producedManifestPath && producedManifestPath === "12342312")
+    console.log(producedManifestPath);
 
   const pollRef = useRef<number | null>(null);
 
@@ -191,7 +192,7 @@ export default function Train({
     <Stack gap="md">
       <Title order={3}>Train a Model</Title>
       <Text c="dimmed" size="sm">
-        Upload a new dataset (CSV), tweak safe hyperparameters, and continue training from the currently selected pre-trained XGBoost model.
+        Upload a new dataset (CSV), tweak safe hyperparameters, and continue training from the currently pre-trained XGBoost model.
       </Text>
 
       {/* Dataset upload */}
@@ -251,35 +252,35 @@ export default function Train({
           />
         </SimpleGrid>
 
-        <Space h="md" />
-        <Text size="sm" fw={600}>Request preview</Text>
-        <Card withBorder>
-  <Text size="sm" fw={600}>General</Text>
-  <Space h="xs" />
-  <Group>
-    <Text size="sm">Algorithm:</Text><Code>xgboost</Code>
-  </Group>
-  <Group>
-    <Text size="sm">Model ID:</Text><Code>xgb_koi_star</Code>
-  </Group>
-  <Group>
-    <Text size="sm">Warm start:</Text><Code>true</Code>
-  </Group>
-</Card>
-
-<Card withBorder mt="sm">
-  <Text size="sm" fw={600}>Hyperparameters</Text>
-  <Space h="xs" />
-  <Table withTableBorder withColumnBorders>
-    <Table.Thead>
-      <Table.Tr><Table.Th>Name</Table.Th><Table.Th>Value</Table.Th></Table.Tr>
-    </Table.Thead>
-    <Table.Tbody>
-      <Table.Tr><Table.Td>learning_rate</Table.Td><Table.Td>0.1</Table.Td></Table.Tr>
-      <Table.Tr><Table.Td>n_estimators</Table.Td><Table.Td>200</Table.Td></Table.Tr>
-    </Table.Tbody>
-  </Table>
-</Card>
+        
+        <Space h="sm" />
+  <Text size="sm" c="dimmed">Training configuration summary:</Text>
+  <Stack gap="xs" mt="xs">
+    <Group gap="xs">
+      <Text size="sm" fw={500}>Algorithm:</Text>
+      <Badge variant="light">XGBoost</Badge>
+    </Group>
+    <Group gap="xs">
+      <Text size="sm" fw={500}>Base Model:</Text>
+      <Badge variant="light">{selectedModel || "—"}</Badge>
+    </Group>
+    <Group gap="xs">
+      <Text size="sm" fw={500}>Training Mode:</Text>
+      <Badge variant="light" color="green">Warm Start</Badge>
+    </Group>
+    {typeof hparams.learning_rate === "number" && (
+      <Group gap="xs">
+        <Text size="sm" fw={500}>Learning Rate:</Text>
+        <Badge variant="light">{hparams.learning_rate}</Badge>
+      </Group>
+    )}
+    {typeof hparams.extra_estimators === "number" && (
+      <Group gap="xs">
+        <Text size="sm" fw={500}>Extra Trees:</Text>
+        <Badge variant="light">{hparams.extra_estimators}</Badge>
+      </Group>
+    )}
+  </Stack>
 
       </Card>
 
@@ -295,16 +296,7 @@ export default function Train({
               New model: {producedModelId}
             </Badge>
 
-            <Button
-              variant="default"
-              onClick={() => {
-                onModelSelected(producedModelId);
-                onSwitchToStats();
-              }}
-            >
-              View stats
-            </Button>
-
+            
             {/* Download buttons */}
             <Button
               variant="outline"
@@ -318,19 +310,6 @@ export default function Train({
               Download model
             </Button>
 
-            {producedManifestPath && (
-              <Button
-                variant="outline"
-                onClick={() =>
-                  downloadFile(
-                    `${API_BASE}/api/files/download?path=${encodeURIComponent(producedManifestPath)}`,
-                    producedManifestPath.split("/").pop() || "manifest.json"
-                  )
-                }
-              >
-                Download manifest
-              </Button>
-            )}
 
             {producedMetricsPath && (
               <Button
