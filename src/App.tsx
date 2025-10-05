@@ -39,6 +39,7 @@ function App() {
   // --- Global UI: mode & model selection ---
   const [mode, setMode] = useState<AppMode>("predict");
   const [selectedModel, setSelectedModel] = useState<string>("xgb_koi_star");
+  const [showVizInfo, setShowVizInfo] = useState(true);
 
   // Optional: merkez satır görünürlüğünü baz al (only in predict mode)
   useEffect(() => {
@@ -200,8 +201,10 @@ const modelOptions = useMemo(
                 pointerEvents: "none",
               }}
             >
+              {showVizInfo && (
               <div
                 style={{
+                  position: "relative",
                   pointerEvents: "auto",
                   background: "rgba(0,0,0,0.5)",
                   padding: 20,
@@ -210,6 +213,23 @@ const modelOptions = useMemo(
                   margin: "0 auto",
                 }}
               >
+                {/* X Button */}
+                <button
+                  onClick={() => setShowVizInfo(false)}
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    background: "transparent",
+                    border: "none",
+                    color: "white",
+                    fontSize: "1.2rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✕
+                </button>
+
                 <Title order={2} style={{ color: "white" }}>
                   Now you're in the interactive visualization
                 </Title>
@@ -224,10 +244,44 @@ const modelOptions = useMemo(
                   </Button>
                 </Group>
               </div>
+            )}
+
+            {!showVizInfo && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "5vh",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background: "rgba(0,0,0,0.4)",
+                  borderRadius: 12,
+                  padding: "10px 20px",
+                  pointerEvents: "auto",
+                  display: "flex",
+                  gap: "12px",
+                }}
+              >
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                >
+                  Back to top
+                </Button>
+                <Button
+                  size="xs"
+                  variant="default"
+                  onClick={() => resultsRef.current?.scrollIntoView({ behavior: "smooth" })}
+                >
+                  Go to results
+                </Button>
+              </div>
+              )}
+
             </div>
 
             {/* ekstra boşluk */}
-            <div style={{ height: "40vh", background: "transparent" }} />
+
           </>
         )}
 
