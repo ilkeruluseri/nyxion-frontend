@@ -8,9 +8,21 @@ import { usePlanetStore } from "../store/usePlanetStore";
 interface BackgroundCanvasProps {
   controlsEnabled: boolean;
   planetsVisible?: boolean;
+  onTooltipChange?: (
+    visible: boolean,
+    data?: {
+      semiMajorAxis: number;
+      eccentricity: number;
+      inclination: number;
+      longitudeOfAscendingNode?: number;
+      argumentOfPeriapsis?: number;
+      orbitSpeed?: number;
+      rotationSpeed?: number;
+    }
+  ) => void;  
 }
 
-export default function BackgroundCanvas({ controlsEnabled = false, planetsVisible = false }: BackgroundCanvasProps) {
+export default function BackgroundCanvas({ controlsEnabled = false, planetsVisible = false, onTooltipChange }: BackgroundCanvasProps) {
   const { planets, visible } = usePlanetStore();
 
   // Filter planets based on visibility
@@ -35,7 +47,7 @@ export default function BackgroundCanvas({ controlsEnabled = false, planetsVisib
 
         {/* Orbit visualization — visible throughout */}
         {planets.length > 0 && planetsVisible &&
-          <PlanetOrbitVisualization planets={visiblePlanets}/>
+          <PlanetOrbitVisualization planets={visiblePlanets} onTooltipChange={onTooltipChange}/>
         }
 
         <ambientLight intensity={0.5} />
