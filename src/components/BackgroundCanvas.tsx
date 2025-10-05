@@ -59,7 +59,30 @@ export default function BackgroundCanvas({ controlsEnabled = false, planetsVisib
           enableZoom
           enableRotate
           makeDefault
-          // make sure left mouse rotates etc:
+          minDistance={3}           // how close you can zoom in
+          maxDistance={40}          // how far you can zoom out
+          maxPolarAngle={Math.PI / 1.9} // prevents flipping under the scene
+          target={[0, 0, 0]}        // keeps orbit centered on your system
+
+          // custom pan limits
+          onChange={(e) => {
+            if (!e) return;
+            const controls = e.target;
+            const { target, object } = controls;
+
+            // limit how far from origin user can pan
+            const maxPan = 20;
+            target.clamp(
+              new THREE.Vector3(-maxPan, -maxPan, -maxPan),
+              new THREE.Vector3(maxPan, maxPan, maxPan)
+            );
+
+            // also clamp camera position to avoid drifting away
+            object.position.clamp(
+              new THREE.Vector3(-maxPan, -maxPan, -maxPan),
+              new THREE.Vector3(maxPan, maxPan, maxPan)
+            );
+          }}
           mouseButtons={{
             LEFT: THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.DOLLY,
