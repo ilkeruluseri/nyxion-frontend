@@ -3,40 +3,14 @@ import { OrbitControls } from "@react-three/drei";
 import { StarBackground } from "./StarBackground";
 import PlanetOrbitVisualization from "./PlanetOrbitVisualization";
 import * as THREE from "three";
+import { usePlanetStore } from "../store/usePlanetStore";
 
 interface BackgroundCanvasProps {
   controlsEnabled: boolean;
 }
 
 export default function BackgroundCanvas({ controlsEnabled = false }: BackgroundCanvasProps) {
-  const planets = [
-    {
-      planetRadius: 0.1,
-      orbitRadius: 2,
-      orbitSpeed: 0.5,
-      color: "lightblue",
-    },
-    {
-      planetRadius: 0.15,
-      orbitSpeed: 0.3,
-      semiMajorAxis: 3.5,
-      eccentricity: 0.4,
-      inclination: 10,
-      longitudeOfAscendingNode: 40,
-      argumentOfPeriapsis: 20,
-      color: "lightgreen",
-    },
-    {
-      planetRadius: 0.25,
-      orbitSpeed: 0.4,
-      semiMajorAxis: 4.5,
-      eccentricity: 0.4,
-      inclination: -10,
-      longitudeOfAscendingNode: 40,
-      argumentOfPeriapsis: 30,
-      color: "red",
-    },
-  ];
+  const { planets } = usePlanetStore();
   return (
     // wrapper fixed to viewport; zIndex 0 so UI can sit above it (zIndex 10)
     <div
@@ -56,7 +30,9 @@ export default function BackgroundCanvas({ controlsEnabled = false }: Background
         <StarBackground textureUrl="/8k_stars.jpg" />
 
         {/* Orbit visualization — visible throughout */}
-        <PlanetOrbitVisualization planets={planets}/>
+        {planets.length > 0 &&
+          <PlanetOrbitVisualization planets={planets}/>
+        }
 
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
