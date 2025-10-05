@@ -239,6 +239,21 @@ export default function DataEntry({ onPredictionComplete }: DataEntryProps) {
       </Title>
 
       <Group mb="lg">
+        <Text size="lg">This project works with data from Kepler objects of Interest (KOI). 
+          You can find the dataset here:
+          <Text
+            component="a"
+            href="https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=cumulative"
+            target="_blank"
+            rel="noopener noreferrer"
+            c="blue.4"
+            fw={500}
+            td="underline"
+          >
+            Kepler Objects of Interest (KOI) - NASA Exoplanet Archive
+          </Text>
+        
+        </Text>
         <Text size="lg">Import CSV file</Text>
         <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
           Upload
