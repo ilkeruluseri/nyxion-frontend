@@ -4,7 +4,6 @@ import {
   Group,
   Table,
   Title,
-  Container,
   Text,
   TextInput,
   Tabs,
@@ -13,6 +12,7 @@ import {
 } from "@mantine/core";
 import Papa from "papaparse";
 import { useDataStore } from "../store/dataStore";
+import { usePlanetStore } from "../store/usePlanetStore";
 import axios from "axios";
 
 interface DataEntryProps {
@@ -20,11 +20,23 @@ interface DataEntryProps {
   modelId?: string; // ← EKLENDİ (opsiyonel)
 }
 
+interface PlanetConfig {
+  planetRadius: number;
+  orbitSpeed: number;
+  semiMajorAxis: number;
+  eccentricity: number;
+  inclination: number;
+  longitudeOfAscendingNode: number;
+  argumentOfPeriapsis: number;
+  color: string;
+}
+
 export default function DataEntry({
   onPredictionComplete,
   modelId = "cascade-v1", // ← default
 }: DataEntryProps) {
   const { rows, setCell, addRow, setRows } = useDataStore();
+  const { setPlanets, setVisibility } = usePlanetStore();
   
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -58,6 +70,19 @@ export default function DataEntry({
     return { newHeaders, rowObjects };
   };
 
+  function extractVisibilityFromResponse(response: any): boolean[] {
+    if (!response?.rows || !Array.isArray(response.rows)) {
+      console.error("Invalid response format:", response);
+      return [];
+    }
+  
+    return response.rows.map((row: any) => {
+      const prediction = String(row.prediction ?? "");
+      // "0" = non-exoplanet → false, otherwise → true
+      return prediction !== "0";
+    });
+  }
+
   const onPredict = async () => {
     try {
       if (importRows.length === 0 || importHeaders.length === 0) {
@@ -86,6 +111,9 @@ export default function DataEntry({
         } else {
           console.error("onPredictionComplete is undefined!");
         }
+        // Step 2: Extract visibility array
+        const visibility = extractVisibilityFromResponse(response.data);
+        setVisibility(visibility);
       } else {
         console.error("Invalid response format:", response.data);
       }
@@ -95,6 +123,62 @@ export default function DataEntry({
     }
   };
   
+  function convertToPlanetConfigs(rows: Record<string, string>[]): PlanetConfig[] {
+    const parsed = rows.map((row) => ({
+      period: parseFloat(row.koi_period),
+      sma: parseFloat(row.koi_sma),
+      ecc: parseFloat(row.koi_eccen) || 0,
+      incl: parseFloat(row.koi_incl) || 0,
+      longp: parseFloat(row.koi_longp) || 0,
+      prad: parseFloat(row.koi_prad) || 1,
+    }));
+  
+    // Avoid divide by zero
+    const maxSMA = Math.max(...parsed.map((p) => p.sma || 0), 1);
+  
+    return parsed.map((p, i) => {
+      // --- ORBIT DISTANCE ---
+      // Compress spacing between orbits while still preserving relative order
+      // Previously scaled to 5, now to 3 for tighter grouping
+      const semiMajorAxis = (p.sma / maxSMA) * 2 + 3; 
+      // The +1 keeps even the smallest orbits visible and distinct
+  
+      // --- PLANET SIZE ---
+      // Make planets smaller overall but maintain differences
+      const planetRadius = Math.max(0.03, p.prad / 20);
+      // If you want them even smaller globally, divide by 25–30 instead
+  
+      // --- ORBIT SPEED ---
+      // Slow down all orbits slightly so motion looks smoother
+      const orbitSpeed = 0.5 / Math.max(p.period, 1);
+  
+      // --- COLOR ---
+      const colorPalette = [
+        "lightblue",
+        "lightgreen",
+        "orange",
+        "violet",
+        "red",
+        "cyan",
+        "yellow",
+        "pink",
+      ];
+  
+      return {
+        planetRadius,
+        orbitSpeed,
+        semiMajorAxis,
+        eccentricity: Math.min(p.ecc, 0.8),
+        inclination: p.incl,
+        longitudeOfAscendingNode: Math.random() * 360,
+        argumentOfPeriapsis: p.longp,
+        color: colorPalette[i % colorPalette.length],
+      };
+    });
+  }
+  
+  
+
   const [importHeaders, setImportHeaders] = useState<string[]>([]);
   const [importRows, setImportRows] = useState<string[][]>([]);
 
@@ -113,6 +197,18 @@ export default function DataEntry({
     "koi_fpflag_ss",
     "koi_fpflag_co",
     "koi_fpflag_ec",
+  ];
+
+  const VISUAL_REQUIRED_COLS = [
+    "koi_period",
+    "koi_prad",
+    "koi_sma",
+    "koi_eccen",
+    "koi_incl",
+    "koi_longp",
+    "koi_steff",
+    "koi_srad",
+    "koi_smass"
   ];
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,6 +253,17 @@ export default function DataEntry({
         setImportHeaders([...REQUIRED_COLS, "mission"]);
         setImportRows(data);
         setRows(data);
+
+        // Visualization stuff
+        const rowObjects = data.map((row) =>
+          Object.fromEntries([...VISUAL_REQUIRED_COLS, "mission"].map((h, i) => [h, row[i]]))
+        );
+
+        const planetConfigs = convertToPlanetConfigs(rowObjects);
+        setPlanets(planetConfigs);
+
+        console.log("Generated Planet Configs:", planetConfigs);
+
       },
       error: (err) => {
         console.error("CSV parse error:", err);

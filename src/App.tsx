@@ -34,6 +34,7 @@ function App() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const [controlsEnabled, setControlsEnabled] = useState(false);
   const [predictionResults, setPredictionResults] = useState<PredictionResult[]>([]);
+  const [planetsVisible, setPlanetsVisible] = useState(false);
 
   // --- Global UI: mode & model selection ---
   const [mode, setMode] = useState<AppMode>("predict");
@@ -55,6 +56,7 @@ function App() {
   }, [mode]);
 
   const scrollToVisualization = () => {
+    setPlanetsVisible(true);
     vizRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -81,11 +83,11 @@ const modelOptions = useMemo(
 
   return (
     <>
-      {/* Canvas arkada: sadece predict modunda etkileşim */}
-      { <BackgroundCanvas controlsEnabled={controlsEnabled} />}
-
-      {/* Foreground UI */}
-      <div style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}>
+      {/* Canvas fixed behind UI — use zIndex 0 (not -1) so it can receive events */}
+      <BackgroundCanvas controlsEnabled={controlsEnabled} planetsVisible={planetsVisible}/>
+  
+      {/* Foreground UI above canvas */}
+      <div style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}> {/* ← pointerEvents: "none" EKLE */}
         <Container
           style={{
             minHeight: "20vh",

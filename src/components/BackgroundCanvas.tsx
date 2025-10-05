@@ -1,13 +1,20 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { StarBackground } from "./StarBackground";
+import PlanetOrbitVisualization from "./PlanetOrbitVisualization";
 import * as THREE from "three";
+import { usePlanetStore } from "../store/usePlanetStore";
 
 interface BackgroundCanvasProps {
   controlsEnabled: boolean;
+  planetsVisible?: boolean;
 }
 
-export default function BackgroundCanvas({ controlsEnabled = false }: BackgroundCanvasProps) {
+export default function BackgroundCanvas({ controlsEnabled = false, planetsVisible = false }: BackgroundCanvasProps) {
+  const { planets, visible } = usePlanetStore();
+
+  // Filter planets based on visibility
+  const visiblePlanets = planets.filter((_, i) => visible[i]);
   return (
     // wrapper fixed to viewport; zIndex 0 so UI can sit above it (zIndex 10)
     <div
@@ -19,18 +26,17 @@ export default function BackgroundCanvas({ controlsEnabled = false }: Background
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 5] }}
+        camera={{ position: [0, 0, 10] }}
         style={{ width: "100%", height: "100%" }}
         // DEBUG: log pointerdown on canvas element
         onPointerDown={() => console.log("Canvas pointerdown")}
       >
         <StarBackground textureUrl="/8k_stars.jpg" />
 
-        {/* test clickable mesh — will log when clicked */}
-        <mesh position={[2, 0, 0]} onPointerDown={() => console.log("mesh clicked")}>
-          <sphereGeometry args={[0.3, 32, 32]} />
-          <meshStandardMaterial color="orange" />
-        </mesh>
+        {/* Orbit visualization — visible throughout */}
+        {planets.length > 0 && planetsVisible &&
+          <PlanetOrbitVisualization planets={visiblePlanets}/>
+        }
 
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
