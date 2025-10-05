@@ -4,20 +4,29 @@ import BackgroundCanvas from "./components/BackgroundCanvas";
 import DataEntry from "./components/DataEntry";
 import ResultsTable from "./components/ResultTable";
 import ModelStats from "./components/ModelStats";
+import Train from "./components/Train";
+
 
 interface PredictionResult {
-  period_days: number;
-  duration_days: number;
-  depth: number;
-  prad_re: number;
-  steff_K: number;
-  srad_Rsun: number;
-  smass_MSun: number;
+  koi_period: number | string;
+  koi_duration: number | string;
+  koi_depth: number | string;
+  koi_prad: number | string;
+  koi_steff: number | string;
+  koi_slogg: number | string;
+  koi_srad: number | string;
+  koi_smass: number | string;
+  koi_impact: number | string;
+  koi_kepmag: number | string;
+  koi_fpflag_nt: number | string;
+  koi_fpflag_ss: number | string;
+  koi_fpflag_co: number | string;
+  koi_fpflag_ec: number | string;
   prediction: string;
-  confidence: number;
+  confidence: number | string;
 }
 
-type AppMode = "predict" | "stats";
+type AppMode = "predict" | "train"| "stats";
 
 function App() {
   // --- Predict mode state/refs ---
@@ -28,7 +37,7 @@ function App() {
 
   // --- Global UI: mode & model selection ---
   const [mode, setMode] = useState<AppMode>("predict");
-  const [selectedModel, setSelectedModel] = useState<string>("cascade-v1");
+  const [selectedModel, setSelectedModel] = useState<string>("xgb_koi_star");
 
   // Optional: merkez satır görünürlüğünü baz al (only in predict mode)
   useEffect(() => {
@@ -115,9 +124,29 @@ const modelOptions = useMemo(
 
           {/* Subheading */}
           <Title order={3} style={{ opacity: 0.75 }}>
-            {mode === "predict" ? "General Prediction" : "Current Model Statistics"}
-          </Title>
+          {mode === "predict"
+            ? "General Prediction"
+            : mode === "stats"
+            ? "Current Model Statistics"
+            : mode === "train"
+            ? "Model Training"
+            : ""}
+        </Title>
+
         </Container>
+        {/* === MODE: TRAIN === */}
+          {mode === "train" && (
+            <div style={{ pointerEvents: "auto" }}>
+              <Container size="lg" py="lg">
+                <Train
+                  selectedModel={selectedModel}
+                  onModelSelected={(mid) => setSelectedModel(mid)}
+                  onSwitchToStats={() => setMode("stats")}
+                />
+              </Container>
+            </div>
+          )}
+
 
         {/* === MODE: PREDICT === */}
         {mode === "predict" && (
