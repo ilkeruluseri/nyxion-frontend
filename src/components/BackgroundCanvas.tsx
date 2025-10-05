@@ -7,10 +7,14 @@ import { usePlanetStore } from "../store/usePlanetStore";
 
 interface BackgroundCanvasProps {
   controlsEnabled: boolean;
+  planetsVisible?: boolean;
 }
 
-export default function BackgroundCanvas({ controlsEnabled = false }: BackgroundCanvasProps) {
-  const { planets } = usePlanetStore();
+export default function BackgroundCanvas({ controlsEnabled = false, planetsVisible = false }: BackgroundCanvasProps) {
+  const { planets, visible } = usePlanetStore();
+
+  // Filter planets based on visibility
+  const visiblePlanets = planets.filter((_, i) => visible[i]);
   return (
     // wrapper fixed to viewport; zIndex 0 so UI can sit above it (zIndex 10)
     <div
@@ -22,7 +26,7 @@ export default function BackgroundCanvas({ controlsEnabled = false }: Background
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 5] }}
+        camera={{ position: [0, 0, 10] }}
         style={{ width: "100%", height: "100%" }}
         // DEBUG: log pointerdown on canvas element
         onPointerDown={() => console.log("Canvas pointerdown")}
@@ -30,8 +34,8 @@ export default function BackgroundCanvas({ controlsEnabled = false }: Background
         <StarBackground textureUrl="/8k_stars.jpg" />
 
         {/* Orbit visualization — visible throughout */}
-        {planets.length > 0 &&
-          <PlanetOrbitVisualization planets={planets}/>
+        {planets.length > 0 && planetsVisible &&
+          <PlanetOrbitVisualization planets={visiblePlanets}/>
         }
 
         <ambientLight intensity={0.5} />

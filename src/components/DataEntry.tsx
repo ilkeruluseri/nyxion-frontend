@@ -32,7 +32,7 @@ interface PlanetConfig {
 
 export default function DataEntry({ onPredictionComplete }: DataEntryProps = {}) {
   const { rows, setCell, addRow, setRows } = useDataStore();
-  const { setPlanets } = usePlanetStore();
+  const { setPlanets, setVisibility } = usePlanetStore();
   
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -58,6 +58,19 @@ export default function DataEntry({ onPredictionComplete }: DataEntryProps = {})
     );
     return { newHeaders, rowObjects };
   };
+
+  function extractVisibilityFromResponse(response: any): boolean[] {
+    if (!response?.rows || !Array.isArray(response.rows)) {
+      console.error("Invalid response format:", response);
+      return [];
+    }
+  
+    return response.rows.map((row: any) => {
+      const prediction = String(row.prediction ?? "");
+      // "0" = non-exoplanet → false, otherwise → true
+      return prediction !== "0";
+    });
+  }
 
   const onPredict = async () => {
     try {
@@ -87,6 +100,9 @@ export default function DataEntry({ onPredictionComplete }: DataEntryProps = {})
         } else {
           console.error("onPredictionComplete is undefined!");
         }
+        // Step 2: Extract visibility array
+        const visibility = extractVisibilityFromResponse(response.data);
+        setVisibility(visibility);
       } else {
         console.error("Invalid response format:", response.data);
       }

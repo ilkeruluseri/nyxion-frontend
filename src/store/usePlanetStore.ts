@@ -14,12 +14,27 @@ export interface PlanetConfig {
 
 interface PlanetStore {
   planets: PlanetConfig[];
+  visible: boolean[]; // which planets are currently shown
   setPlanets: (planets: PlanetConfig[]) => void;
+  setVisibility: (visible: boolean[]) => void;
+  setPlanetVisible: (index: number, visible: boolean) => void;
   clearPlanets: () => void;
 }
 
 export const usePlanetStore = create<PlanetStore>((set) => ({
-  planets: [],
-  setPlanets: (planets) => set({ planets }),
-  clearPlanets: () => set({ planets: [] }),
+    planets: [],
+    visible: [],
+    setPlanets: (planets) =>
+    set({
+        planets,
+        visible: Array(planets.length).fill(false), // all hidden initially
+    }),
+    setVisibility: (visible) => set({ visible }),
+    setPlanetVisible: (index, value) =>
+        set((state) => {
+          const updated = [...state.visible];
+          updated[index] = value;
+          return { visible: updated };
+        }),
+    clearPlanets: () => set({ planets: [], visible: []}),
 }));
