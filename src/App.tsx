@@ -103,7 +103,8 @@ const modelOptions = useMemo(
           <Group justify="space-between" align="center" wrap="wrap" mt="md" mb="xs">
             <Title order={1}>Nyxion</Title>
 
-            <Group>
+                      <Group>
+            {mode === "stats" && (
               <Select
                 data={modelOptions}
                 value={selectedModel}
@@ -113,17 +114,20 @@ const modelOptions = useMemo(
                 checkIconPosition="right"
                 w={260}
               />
-              <SegmentedControl
-                value={mode}
-                onChange={(v) => setMode(v as AppMode)}
-                data={[
-                  { label: "Predict", value: "predict" },
-                  { label: "Train", value: "train" },
-                  { label: "Model Stats", value: "stats" },
-                ]}
-              />
-            </Group>
+            )}
+
+            <SegmentedControl
+              value={mode}
+              onChange={(v) => setMode(v as AppMode)}
+              data={[
+                { label: "Predict", value: "predict" },
+                { label: "Train", value: "train" },
+                { label: "Model Stats", value: "stats" },
+              ]}
+            />
           </Group>
+
+                    </Group>
 
           {/* Subheading */}
           <Title order={3} style={{ opacity: 0.75 }}>
