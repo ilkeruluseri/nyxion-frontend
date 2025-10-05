@@ -22,7 +22,7 @@ import {
 
 type TrainStage = "idle" | "uploading" | "queued" | "running" | "completed" | "failed";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://nyxion-backend.onrender.com";
 
 interface TrainStartResponse {
   job_id: string;
@@ -75,10 +75,12 @@ export default function Train({
   const [producedManifestPath, setProducedManifestPath] = useState<string | null>(null);
   const [producedMetricsPath, setProducedMetricsPath] = useState<string | null>(null);
 
+  if (jobId && jobId === "12342312")
+    console.log(jobId);
+
   const pollRef = useRef<number | null>(null);
 
   // Warm-start is effective only if a base model is selected (algo fixed to XGBoost).
-  const isWarmXgb = Boolean(selectedModel);
 
   const hparams = useMemo(
     () => ({
@@ -89,19 +91,6 @@ export default function Train({
     [learningRate, extraEstimators]
   );
 
-  function payloadPreview() {
-    return JSON.stringify(
-      {
-        algo: "xgboost", // fixed
-        model_id: selectedModel,
-        warm_start: true,
-        base_model_id: selectedModel,
-        hparams, // { learning_rate, extra_estimators }
-      },
-      null,
-      2
-    );
-  }
 
   async function downloadFile(url: string, filename: string) {
     const res = await fetch(url);

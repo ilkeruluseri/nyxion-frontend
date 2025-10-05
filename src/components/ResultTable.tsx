@@ -39,12 +39,6 @@ import {
       return null;
     }
   
-    const getConfidenceColor = (confidence: number | string) => {
-      const conf = typeof confidence === 'string' ? parseFloat(confidence) : confidence;
-      if (conf >= 0.7) return "green";
-      if (conf >= 0.5) return "yellow";
-      return "red";
-    };
   
     const getPredictionLabel = (prediction: string) => {
       const labels: Record<string, string> = {
@@ -122,10 +116,6 @@ import {
                   const smass   = toNum(row.koi_smass);
                   const impact  = toNum(row.koi_impact);
                   const kepmag  = toNum(row.koi_kepmag);
-                  const fp_nt   = toNum(row.koi_fpflag_nt);
-                  const fp_ss   = toNum(row.koi_fpflag_ss);
-                  const fp_co   = toNum(row.koi_fpflag_co);
-                  const fp_ec   = toNum(row.koi_fpflag_ec);
                 
                   const conf    = toNum(row.confidence);
                   const predCode = String(row.prediction); // "0" | "1" | "2" vb.

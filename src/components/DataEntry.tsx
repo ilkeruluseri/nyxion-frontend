@@ -33,7 +33,6 @@ interface PlanetConfig {
 
 export default function DataEntry({
   onPredictionComplete,
-  modelId = "cascade-v1", // ← default
 }: DataEntryProps) {
   const { rows, setCell, addRow, setRows } = useDataStore();
   const { setPlanets, setVisibility } = usePlanetStore();
@@ -93,7 +92,7 @@ export default function DataEntry({
       // rename headers + build row objects
       const { newHeaders, rowObjects } = renameRows(importHeaders, importRows);
   
-      const response = await axios.post("http://127.0.0.1:8000/api/predict/from-table", {
+      const response = await axios.post("https://nyxion-backend.onrender.com/api/predict/from-table", {
         columns: newHeaders,
         rows: rowObjects,
       });
