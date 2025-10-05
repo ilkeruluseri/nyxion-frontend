@@ -23,11 +23,9 @@ export default function PlanetOrbitVisualization({
   return (
     <>
       <color attach="background" args={["black"]} />
-      <ambientLight intensity={0.3} />
-      <pointLight position={[0, 0, 0]} intensity={2} color="orange" />
 
       {/* Central Star */}
-      <Star radius={0.4} color="orange" />
+      <Star radius={0.4} color="orange"/>
 
       {/* Planets (from props) */}
       {planets.map((planet, index) => (
