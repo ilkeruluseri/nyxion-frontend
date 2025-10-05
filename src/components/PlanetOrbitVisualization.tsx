@@ -11,14 +11,39 @@ export interface PlanetConfig {
   argumentOfPeriapsis?: number;
   orbitRadius?: number; // for circular orbits
   color?: string;
+  onTooltipChange?: (
+    visible: boolean,
+    data?: {
+      semiMajorAxis: number;
+      eccentricity: number;
+      inclination: number;
+      longitudeOfAscendingNode?: number;
+      argumentOfPeriapsis?: number;
+      orbitSpeed?: number;
+      rotationSpeed?: number;
+    }
+  ) => void;
 }
 
 interface PlanetOrbitVisualizationProps {
   planets: PlanetConfig[];
+  onTooltipChange?: (
+    visible: boolean,
+    data?: {
+      semiMajorAxis: number;
+      eccentricity: number;
+      inclination: number;
+      longitudeOfAscendingNode?: number;
+      argumentOfPeriapsis?: number;
+      orbitSpeed?: number;
+      rotationSpeed?: number;
+    }
+  ) => void;  
 }
 
 export default function PlanetOrbitVisualization({
   planets,
+  onTooltipChange
 }: PlanetOrbitVisualizationProps) {
   return (
     <>
@@ -28,9 +53,12 @@ export default function PlanetOrbitVisualization({
       <Star radius={0.4} color="orange"/>
 
       {/* Planets (from props) */}
+
+      <group onPointerMissed={() => {if(onTooltipChange) onTooltipChange(false)}}>
       {planets.map((planet, index) => (
-        <Planet key={index} {...planet} />
+        <Planet key={index} onTooltipChange={onTooltipChange} {...planet} />
       ))}
+      </group>
     </>
   );
 }

@@ -5,6 +5,7 @@ import DataEntry from "./components/DataEntry";
 import ResultsTable from "./components/ResultTable";
 import ModelStats from "./components/ModelStats";
 import Train from "./components/Train";
+import Tooltip from "./components/Tooltip";
 
 
 interface PredictionResult {
@@ -36,10 +37,38 @@ function App() {
   const [predictionResults, setPredictionResults] = useState<PredictionResult[]>([]);
   const [planetsVisible, setPlanetsVisible] = useState(false);
 
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipData, setTooltipData] = useState<{ 
+    semiMajorAxis: number;
+    eccentricity: number;
+    inclination: number;
+    longitudeOfAscendingNode?: number;
+    argumentOfPeriapsis?: number;
+    orbitSpeed?: number;
+    rotationSpeed?: number; } | undefined>();
+
+
   // --- Global UI: mode & model selection ---
   const [mode, setMode] = useState<AppMode>("predict");
   const [selectedModel, setSelectedModel] = useState<string>("xgb_koi_star");
   const [showVizInfo, setShowVizInfo] = useState(true);
+
+  const handleTooltipChange = (
+    visible: boolean,
+    data?: {
+      semiMajorAxis: number;
+      eccentricity: number;
+      inclination: number;
+      longitudeOfAscendingNode?: number;
+      argumentOfPeriapsis?: number;
+      orbitSpeed?: number;
+      rotationSpeed?: number;
+    }
+  ) => {
+    setTooltipVisible(visible);
+    setTooltipData(data);
+  };
+  
 
   // Optional: merkez satır görünürlüğünü baz al (only in predict mode)
   useEffect(() => {
@@ -85,7 +114,7 @@ const modelOptions = useMemo(
   return (
     <>
       {/* Canvas fixed behind UI — use zIndex 0 (not -1) so it can receive events */}
-      <BackgroundCanvas controlsEnabled={controlsEnabled} planetsVisible={planetsVisible}/>
+      <BackgroundCanvas controlsEnabled={controlsEnabled} planetsVisible={planetsVisible} onTooltipChange={handleTooltipChange}/>
   
       {/* Foreground UI above canvas */}
       <div style={{ position: "relative", zIndex: 10, pointerEvents: "none" }}> {/* ← pointerEvents: "none" EKLE */}
@@ -279,8 +308,7 @@ const modelOptions = useMemo(
               )}
 
             </div>
-
-            {/* ekstra boşluk */}
+            <Tooltip visible={tooltipVisible} data={tooltipData} />
 
           </>
         )}
@@ -294,6 +322,7 @@ const modelOptions = useMemo(
           </div>
         )}
       </div>
+      
     </>
   );
 }
