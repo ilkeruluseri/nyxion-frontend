@@ -17,6 +17,7 @@ import axios from "axios";
 
 interface DataEntryProps {
   onPredictionComplete?: (results: any[]) => void;
+  modelId?: string; // ← EKLENDİ (opsiyonel)
 }
 
 interface PlanetConfig {
@@ -30,7 +31,10 @@ interface PlanetConfig {
   color: string;
 }
 
-export default function DataEntry({ onPredictionComplete }: DataEntryProps = {}) {
+export default function DataEntry({
+  onPredictionComplete,
+  modelId = "cascade-v1", // ← default
+}: DataEntryProps) {
   const { rows, setCell, addRow, setRows } = useDataStore();
   const { setPlanets, setVisibility } = usePlanetStore();
   
@@ -39,15 +43,22 @@ export default function DataEntry({ onPredictionComplete }: DataEntryProps = {})
   const renameRows = (headers: string[], rows: string[][]) => {
     // mapping old → new
     const renameMap: Record<string, string> = {
-      koi_period: "period_days",
-      koi_duration: "duration_days",
-      koi_depth: "depth",
-      koi_prad: "prad_re",
-      koi_steff: "steff_K",
-      koi_srad: "srad_Rsun",
-      koi_smass: "smass_MSun",
-      mission: "mission", // keep mission as-is
+      koi_period: "koi_period",
+      koi_duration: "koi_duration",
+      koi_depth: "koi_depth",
+      koi_prad: "koi_prad",
+      koi_steff: "koi_steff",
+      koi_slogg: "koi_slogg",
+      koi_srad: "koi_srad",
+      koi_smass: "koi_smass",
+      koi_impact: "koi_impact",
+      koi_kepmag: "koi_kepmag",
+      koi_fpflag_nt: "koi_fpflag_nt",
+      koi_fpflag_ss: "koi_fpflag_ss",
+      koi_fpflag_co: "koi_fpflag_co",
+      koi_fpflag_ec: "koi_fpflag_ec",
     };
+    
   
     // rename headers
     const newHeaders = headers.map((h) => renameMap[h] ?? h);
@@ -177,8 +188,15 @@ export default function DataEntry({ onPredictionComplete }: DataEntryProps = {})
     "koi_depth",
     "koi_prad",
     "koi_steff",
+    "koi_slogg",
     "koi_srad",
     "koi_smass",
+    "koi_impact",
+    "koi_kepmag",
+    "koi_fpflag_nt",
+    "koi_fpflag_ss",
+    "koi_fpflag_co",
+    "koi_fpflag_ec",
   ];
 
   const VISUAL_REQUIRED_COLS = [
@@ -336,14 +354,21 @@ export default function DataEntry({ onPredictionComplete }: DataEntryProps = {})
           <Table striped highlightOnHover withColumnBorders>
             <thead>
               <tr>
-                <th key={0}>Period Days</th>
-                <th key={1}>Duration Days</th>
-                <th key={2}>Depth</th>
-                <th key={3}>Prad Re</th>
-                <th key={4}>Steff K</th>
-                <th key={5}>Srad Rsun</th>
-                <th key={6}>Smass MSun</th>
-                <th key={7}>Mission</th>
+              <th key={0}>koi_period</th>
+              <th key={1}>koi_duration</th>
+              <th key={2}>koi_depth</th>
+              <th key={3}>koi_prad</th>
+              <th key={4}>koi_steff</th>
+              <th key={5}>koi_slogg</th>
+              <th key={6}>koi_srad</th>
+              <th key={7}>koi_smass</th>
+              <th key={8}>koi_impact</th>
+              <th key={9}>koi_kepmag</th>
+              <th key={10}>koi_fpflag_nt</th>
+              <th key={11}>koi_fpflag_ss</th>
+              <th key={12}>koi_fpflag_co</th>
+              <th key={13}>koi_fpflag_ec</th>
+
               </tr>
             </thead>
             <tbody>

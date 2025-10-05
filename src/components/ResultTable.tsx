@@ -9,21 +9,29 @@ import {
   } from "@mantine/core";
   
   interface PredictionResult {
-    period_days: number | string;
-    duration_days: number | string;
-    depth: number | string;
-    prad_re: number | string;
-    steff_K: number | string;
-    srad_Rsun: number | string;
-    smass_MSun: number | string;
-    mission?: string;
+    koi_period: number | string;
+    koi_duration: number | string;
+    koi_depth: number | string;
+    koi_prad: number | string;
+    koi_steff: number | string;
+    koi_slogg: number | string;
+    koi_srad: number | string;
+    koi_smass: number | string;
+    koi_impact: number | string;
+    koi_kepmag: number | string;
+    koi_fpflag_nt: number | string;
+    koi_fpflag_ss: number | string;
+    koi_fpflag_co: number | string;
+    koi_fpflag_ec: number | string;
     prediction: string;
     confidence: number | string;
   }
   
+  
   interface ResultsTableProps {
     results: PredictionResult[];
     onViewVisualization: () => void;
+    modelId?: string;
   }
   
   export default function ResultsTable({ results, onViewVisualization }: ResultsTableProps) {
@@ -80,64 +88,95 @@ import {
           >
             <Table.Thead>
               <Table.Tr>
-                <Table.Th style={{ color: "white" }}>Period (days)</Table.Th>
-                <Table.Th style={{ color: "white" }}>Duration (days)</Table.Th>
-                <Table.Th style={{ color: "white" }}>Depth</Table.Th>
-                <Table.Th style={{ color: "white" }}>Prad (Re)</Table.Th>
-                <Table.Th style={{ color: "white" }}>Teff (K)</Table.Th>
-                <Table.Th style={{ color: "white" }}>Srad (Rsun)</Table.Th>
-                <Table.Th style={{ color: "white" }}>Smass (MSun)</Table.Th>
-                <Table.Th style={{ color: "white" }}>Prediction</Table.Th>
-                <Table.Th style={{ color: "white" }}>Confidence</Table.Th>
-                <Table.Th style={{ color: "white" }}>Action</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_period</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_duration</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_depth</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_prad</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_steff</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_slogg</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_srad</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_smass</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_impact</Table.Th>
+              <Table.Th style={{ color: "white" }}>koi_kepmag</Table.Th>
+              <Table.Th style={{ color: "white" }}>Prediction</Table.Th>
+              <Table.Th style={{ color: "white" }}>Confidence</Table.Th>
+              <Table.Th style={{ color: "white" }}>Action</Table.Th>
+
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {results.map((row, idx) => {
                 try {
-                  const period = typeof row.period_days === 'string' ? parseFloat(row.period_days) : Number(row.period_days);
-                  const duration = typeof row.duration_days === 'string' ? parseFloat(row.duration_days) : Number(row.duration_days);
-                  const depth = typeof row.depth === 'string' ? parseFloat(row.depth) : Number(row.depth);
-                  const prad = typeof row.prad_re === 'string' ? parseFloat(row.prad_re) : Number(row.prad_re);
-                  const teff = typeof row.steff_K === 'string' ? parseFloat(row.steff_K) : Number(row.steff_K);
-                  const srad = typeof row.srad_Rsun === 'string' ? parseFloat(row.srad_Rsun) : Number(row.srad_Rsun);
-                  const smass = typeof row.smass_MSun === 'string' ? parseFloat(row.smass_MSun) : Number(row.smass_MSun);
-                  const conf = typeof row.confidence === 'string' ? parseFloat(row.confidence) : Number(row.confidence);
-  
+                  // Güvenli sayı dönüştürücü
+                  const toNum = (v: number | string) =>
+                    typeof v === "string" ? parseFloat(v) : Number(v);
+                
+                  // --- Koi alanları (hepsi yeni şemaya göre) ---
+                  const period  = toNum(row.koi_period);
+                  const duration = toNum(row.koi_duration);
+                  const depth   = toNum(row.koi_depth);
+                  const prad    = toNum(row.koi_prad);
+                  const teff    = toNum(row.koi_steff);
+                  const slogg   = toNum(row.koi_slogg);
+                  const srad    = toNum(row.koi_srad);
+                  const smass   = toNum(row.koi_smass);
+                  const impact  = toNum(row.koi_impact);
+                  const kepmag  = toNum(row.koi_kepmag);
+                  const fp_nt   = toNum(row.koi_fpflag_nt);
+                  const fp_ss   = toNum(row.koi_fpflag_ss);
+                  const fp_co   = toNum(row.koi_fpflag_co);
+                  const fp_ec   = toNum(row.koi_fpflag_ec);
+                
+                  const conf    = toNum(row.confidence);
+                  const predCode = String(row.prediction); // "0" | "1" | "2" vb.
+                
                   return (
                     <Table.Tr key={idx}>
+                      {/* Sıra: başlıklarla birebir aynı */}
                       <Table.Td style={{ color: "white" }}>
-                        {isNaN(period) ? row.period_days : period.toFixed(3)}
+                        {Number.isNaN(period) ? row.koi_period : period.toFixed(3)}
                       </Table.Td>
                       <Table.Td style={{ color: "white" }}>
-                        {isNaN(duration) ? row.duration_days : duration.toFixed(4)}
+                        {Number.isNaN(duration) ? row.koi_duration : duration.toFixed(4)}
                       </Table.Td>
                       <Table.Td style={{ color: "white" }}>
-                        {isNaN(depth) ? row.depth : depth.toFixed(2)}
+                        {Number.isNaN(depth) ? row.koi_depth : depth.toFixed(2)}
                       </Table.Td>
                       <Table.Td style={{ color: "white" }}>
-                        {isNaN(prad) ? row.prad_re : prad.toFixed(2)}
+                        {Number.isNaN(prad) ? row.koi_prad : prad.toFixed(2)}
                       </Table.Td>
                       <Table.Td style={{ color: "white" }}>
-                        {isNaN(teff) ? row.steff_K : teff.toFixed(0)}
+                        {Number.isNaN(teff) ? row.koi_steff : teff.toFixed(0)}
                       </Table.Td>
                       <Table.Td style={{ color: "white" }}>
-                        {isNaN(srad) ? row.srad_Rsun : srad.toFixed(3)}
+                        {Number.isNaN(slogg) ? row.koi_slogg : slogg.toFixed(3)}
                       </Table.Td>
                       <Table.Td style={{ color: "white" }}>
-                        {isNaN(smass) ? row.smass_MSun : smass.toFixed(2)}
+                        {Number.isNaN(srad) ? row.koi_srad : srad.toFixed(3)}
                       </Table.Td>
+                      <Table.Td style={{ color: "white" }}>
+                        {Number.isNaN(smass) ? row.koi_smass : smass.toFixed(2)}
+                      </Table.Td>
+                      <Table.Td style={{ color: "white" }}>
+                        {Number.isNaN(impact) ? row.koi_impact : impact.toFixed(3)}
+                      </Table.Td>
+                      <Table.Td style={{ color: "white" }}>
+                        {Number.isNaN(kepmag) ? row.koi_kepmag : kepmag.toFixed(3)}
+                        </Table.Td>
+                      {/* Prediction */}
                       <Table.Td>
-                        <Badge color={row.prediction === "2" ? "green" : row.prediction === "1" ? "blue" : "red"}>
-                          {getPredictionLabel(row.prediction)}
+                        <Badge color={predCode === "2" ? "green" : predCode === "1" ? "blue" : "red"}>
+                          {getPredictionLabel(predCode)}
                         </Badge>
                       </Table.Td>
-                      <Table.Td>
-                        <Badge color={getConfidenceColor(conf)}>
-                          {isNaN(conf) ? row.confidence : (conf * 100).toFixed(1) + '%'}
-                        </Badge>
+                
+                      {/* Confidence */}
+                      <Table.Td style={{ color: "white" }}>
+                        {Number.isNaN(conf) ? row.confidence : conf.toFixed(3)}
                       </Table.Td>
-                                        <Table.Td>
+                
+                      {/* Action (mevcut buton/menünü burada koru) */}
+                      <Table.Td>
                     {(row.prediction === "1" || row.prediction === "2") ? (
                         <Button 
                         size="xs" 
@@ -155,10 +194,11 @@ import {
                     </Table.Td>
                     </Table.Tr>
                   );
-                } catch (error) {
-                  console.error("Error rendering row:", row, error);
+                } catch (e) {
+                  console.error("Row render error:", e, row);
                   return null;
                 }
+                
               })}
             </Table.Tbody>
           </Table>
