@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   Code,
-  Collapse,
   FileInput,
   Grid,
   Group,
@@ -14,6 +13,7 @@ import {
   SimpleGrid,
   Space,
   Stack,
+  Table,
   Text,
   Textarea,
   Title,
@@ -21,6 +21,8 @@ import {
 } from "@mantine/core";
 
 type TrainStage = "idle" | "uploading" | "queued" | "running" | "completed" | "failed";
+
+const API_BASE = "http://localhost:8000";
 
 interface TrainStartResponse {
   job_id: string;
@@ -39,7 +41,9 @@ interface TrainStatus {
     cand_prec?: number;
     cand_rec?: number;
   };
-  model_id?: string; // e.g., "models/xgb_finetuned.json"
+  model_id?: string;        // e.g., "models/xgb_koi_finetuned_....joblib"
+  manifest_path?: string;   // e.g., "models/xgb_koi_finetuned_....joblib.manifest.json"
+  metrics_path?: string;    // e.g., "models/xgb_koi_finetuned_....joblib.metrics.json"
   error?: string;
 }
 
@@ -48,7 +52,7 @@ export default function Train({
   onSwitchToStats,
   onModelSelected,
 }: {
-  selectedModel: string;                  // base model to warm-start from (required)
+  selectedModel: string; // base model to warm-start from (required)
   onSwitchToStats: () => void;
   onModelSelected: (modelId: string) => void;
 }) {
@@ -58,13 +62,7 @@ export default function Train({
   // === Hyperparameters (safe tweakables for warm-start) ===
   // Algorithm fixed to XGBoost; warm_start always ON.
   const [learningRate, setLearningRate] = useState<number | string>(0.1);
-  const [nEstimators, setNEstimators]   = useState<number | string>(200);  // extra trees to add
-  const [thr1, setThr1]                 = useState<number | string>(0.3);  // pipeline threshold for candidate stage
-
-  // Advanced (optional)
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [subsample, setSubsample]       = useState<number | string>(0.8);
-  const [colsample, setColsample]       = useState<number | string>(0.8);
+  const [extraEstimators, setExtraEstimators] = useState<number | string>(200); // extra trees to add
 
   // === Job state ===
   const [jobId, setJobId] = useState<string | null>(null);
@@ -74,6 +72,8 @@ export default function Train({
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<TrainStatus["metrics"] | null>(null);
   const [producedModelId, setProducedModelId] = useState<string | null>(null);
+  const [producedManifestPath, setProducedManifestPath] = useState<string | null>(null);
+  const [producedMetricsPath, setProducedMetricsPath] = useState<string | null>(null);
 
   const pollRef = useRef<number | null>(null);
 
@@ -83,29 +83,39 @@ export default function Train({
   const hparams = useMemo(
     () => ({
       // safe tweaks for warm-start
-      learning_rate:     learningRate === "" ? undefined : Number(learningRate),
-      n_estimators:      nEstimators  === "" ? undefined : Number(nEstimators), // extra rounds
-      // advanced (optional)
-      subsample:         subsample    === "" ? undefined : Number(subsample),
-      colsample_bytree:  colsample    === "" ? undefined : Number(colsample),
-      // pipeline-specific threshold (applied outside model training)
-      thr1:              thr1         === "" ? undefined : Number(thr1),
+      learning_rate: learningRate === "" ? undefined : Number(learningRate),
+      extra_estimators: extraEstimators === "" ? undefined : Number(extraEstimators),
     }),
-    [learningRate, nEstimators, subsample, colsample, thr1]
+    [learningRate, extraEstimators]
   );
 
   function payloadPreview() {
     return JSON.stringify(
       {
-        algo: "xgboost",           // fixed
+        algo: "xgboost", // fixed
         model_id: selectedModel,
         warm_start: true,
         base_model_id: selectedModel,
-        hparams,
+        hparams, // { learning_rate, extra_estimators }
       },
       null,
       2
     );
+  }
+
+  async function downloadFile(url: string, filename: string) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Download failed: ${res.status}`);
+    }
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
   }
 
   async function startTraining() {
@@ -124,17 +134,19 @@ export default function Train({
     setLogs([]);
     setMetrics(null);
     setProducedModelId(null);
+    setProducedManifestPath(null);
+    setProducedMetricsPath(null);
 
     const form = new FormData();
-    form.append("algo", "xgboost");               // fixed
-    form.append("model_id", selectedModel);       // current selection
-    form.append("warm_start", "true");            // always on
-    form.append("base_model_id", selectedModel);  // base booster
-    form.append("dataset_file", datasetFile);     // CSV contents
+    form.append("algo", "xgboost"); // fixed
+    form.append("model_id", selectedModel); // current selection
+    form.append("warm_start", "true"); // always on
+    form.append("base_model_id", selectedModel); // base booster
+    form.append("dataset_file", datasetFile); // CSV contents
     form.append("hparams", JSON.stringify(hparams));
 
     try {
-      const resp = await fetch("/api/train", { method: "POST", body: form });
+      const resp = await fetch(`${API_BASE}/api/train`, { method: "POST", body: form });
       if (!resp.ok) {
         const t = await safeText(resp);
         setStage("failed");
@@ -155,7 +167,7 @@ export default function Train({
     stopPolling();
     pollRef.current = window.setInterval(async () => {
       try {
-        const r = await fetch(`/api/train/${id}`);
+        const r = await fetch(`${API_BASE}/api/train/${id}`);
         const j: TrainStatus = await r.json();
 
         setStage(j.status);
@@ -163,6 +175,8 @@ export default function Train({
         setLogs((prev) => mergeLogs(prev, j.logs ?? []));
         if (j.metrics) setMetrics(j.metrics);
         if (j.model_id) setProducedModelId(j.model_id);
+        if (j.manifest_path) setProducedManifestPath(j.manifest_path);
+        if (j.metrics_path) setProducedMetricsPath(j.metrics_path);
 
         if (j.status === "completed" || j.status === "failed") {
           stopPolling();
@@ -215,10 +229,9 @@ export default function Train({
         <Title order={4}>Algorithm & Hyperparameters</Title>
         <Space h="xs" />
         <Alert color="blue" title="Warm start (XGBoost)">
-          Training will continue from the currently selected base model.{" "}
+          Training will continue from the selected base model.{" "}
           <strong>Locked internally:</strong> objective/booster/max_depth.{" "}
-          <strong>Safe to tweak:</strong> n_estimators (add trees), learning_rate (small changes), thr1.{" "}
-          <em>Advanced (optional):</em> subsample, colsample_bytree.
+          <strong>Safe to tweak:</strong> extra_estimators (add trees), learning_rate (small changes).
         </Alert>
         <Space h="md" />
 
@@ -239,79 +252,60 @@ export default function Train({
 
           <NumberInput
             size="sm"
-            label="n_estimators"
-            value={nEstimators}
-            onChange={setNEstimators}
+            label="extra_estimators"
+            value={extraEstimators}
+            onChange={setExtraEstimators}
             step={50}
-            min={50}
+            min={0}
             max={5000}
-            maw={400}
-          />
-
-          <NumberInput
-            size="sm"
-            label="thr1 (candidate threshold)"
-            value={thr1}
-            onChange={setThr1}
-            step={0.05}
-            min={0.05}
-            max={0.95}
             maw={400}
           />
         </SimpleGrid>
 
-        <Space h="sm" />
-        <Group gap="sm">
-          <Button size="xs" variant={showAdvanced ? "filled" : "light"} onClick={() => setShowAdvanced((s) => !s)}>
-            {showAdvanced ? "Hide advanced" : "Show advanced"}
-          </Button>
-          <Text size="xs" c="dimmed">Optional controls for fine-grained tuning.</Text>
-        </Group>
-
-        <Collapse in={showAdvanced}>
-          <Space h="sm" />
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-            <NumberInput
-              size="sm"
-              label="subsample (advanced)"
-              value={subsample}
-              onChange={setSubsample}
-              step={0.05}
-              min={0.1}
-              max={1}
-              maw={400}
-            />
-            <NumberInput
-              size="sm"
-              label="colsample_bytree (advanced)"
-              value={colsample}
-              onChange={setColsample}
-              step={0.05}
-              min={0.1}
-              max={1}
-              maw={400}
-            />
-          </SimpleGrid>
-        </Collapse>
-
         <Space h="md" />
         <Text size="sm" fw={600}>Request preview</Text>
-        <Code block>{payloadPreview()}</Code>
+        <Card withBorder>
+  <Text size="sm" fw={600}>General</Text>
+  <Space h="xs" />
+  <Group>
+    <Text size="sm">Algorithm:</Text><Code>xgboost</Code>
+  </Group>
+  <Group>
+    <Text size="sm">Model ID:</Text><Code>xgb_koi_star</Code>
+  </Group>
+  <Group>
+    <Text size="sm">Warm start:</Text><Code>true</Code>
+  </Group>
+</Card>
+
+<Card withBorder mt="sm">
+  <Text size="sm" fw={600}>Hyperparameters</Text>
+  <Space h="xs" />
+  <Table withTableBorder withColumnBorders>
+    <Table.Thead>
+      <Table.Tr><Table.Th>Name</Table.Th><Table.Th>Value</Table.Th></Table.Tr>
+    </Table.Thead>
+    <Table.Tbody>
+      <Table.Tr><Table.Td>learning_rate</Table.Td><Table.Td>0.1</Table.Td></Table.Tr>
+      <Table.Tr><Table.Td>n_estimators</Table.Td><Table.Td>200</Table.Td></Table.Tr>
+    </Table.Tbody>
+  </Table>
+</Card>
+
       </Card>
 
       {/* Actions */}
       <Group>
-        <Button
-          onClick={startTraining}
-          disabled={!datasetFile || !selectedModel}
-          loading={stage === "uploading"}
-        >
+        <Button onClick={startTraining} disabled={!datasetFile || !selectedModel} loading={stage === "uploading"}>
           Start training
         </Button>
 
         {producedModelId && (
-          <Group gap="xs">
-            <Badge variant="light" size="lg">New model: {producedModelId}</Badge>
+          <Group gap="xs" wrap="wrap">
+            <Badge variant="light" size="lg">
+              New model: {producedModelId}
+            </Badge>
+
             <Button
               variant="default"
               onClick={() => {
@@ -321,6 +315,47 @@ export default function Train({
             >
               View stats
             </Button>
+
+            {/* Download buttons */}
+            <Button
+              variant="outline"
+              onClick={() =>
+                downloadFile(
+                  `${API_BASE}/api/files/download?path=${encodeURIComponent(producedModelId!)}`,
+                  producedModelId!.split("/").pop() || "model.joblib"
+                )
+              }
+            >
+              Download model
+            </Button>
+
+            {producedManifestPath && (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  downloadFile(
+                    `${API_BASE}/api/files/download?path=${encodeURIComponent(producedManifestPath)}`,
+                    producedManifestPath.split("/").pop() || "manifest.json"
+                  )
+                }
+              >
+                Download manifest
+              </Button>
+            )}
+
+            {producedMetricsPath && (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  downloadFile(
+                    `${API_BASE}/api/files/download?path=${encodeURIComponent(producedMetricsPath)}`,
+                    producedMetricsPath.split("/").pop() || "metrics.json"
+                  )
+                }
+              >
+                Download metrics
+              </Button>
+            )}
           </Group>
         )}
       </Group>
@@ -350,13 +385,7 @@ export default function Train({
         )}
 
         <Space h="sm" />
-        <Textarea
-          label="Logs"
-          value={(logs ?? []).join("\n")}
-          autosize
-          minRows={8}
-          readOnly
-        />
+        <Textarea label="Logs" value={(logs ?? []).join("\n")} autosize minRows={8} readOnly />
       </Card>
 
       {error && (
