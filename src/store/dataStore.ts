@@ -10,7 +10,7 @@ interface DataStore {
 
 // store/dataStore.ts
 export const useDataStore = create<DataStore>((set) => ({
-rows: [Array(8).fill("")],  // 👈 8 columns instead of 7
+rows: [Array(14).fill("")],  // 👈 8 columns instead of 7
     setCell: (rowIndex, colIndex, value) =>
         set((state) => {
         const updated = [...state.rows];
