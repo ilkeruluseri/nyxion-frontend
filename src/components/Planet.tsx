@@ -1,7 +1,8 @@
 import { useRef, useMemo, useEffect, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useThree, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
+
 
 interface PlanetProps {
   planetRadius?: number;
@@ -13,6 +14,7 @@ interface PlanetProps {
   longitudeOfAscendingNode?: number; // Ω (deg)
   argumentOfPeriapsis?: number;      // ω (deg)
   color?: string;
+  rotationSpeed?: number;
 }
 
 export default function Planet({
@@ -25,6 +27,7 @@ export default function Planet({
   longitudeOfAscendingNode = 0,
   argumentOfPeriapsis = 0,
   color = "lightblue",
+  rotationSpeed = 0.5, // radians per second
 }: PlanetProps) {
   const planetRef = useRef<THREE.Mesh>(null);
   const orbitRef = useRef<THREE.Group>(new THREE.Group());
@@ -36,6 +39,12 @@ export default function Planet({
   const [showTooltip, setShowTooltip] = useState(false);
   // tooltipPos holds viewport/window coordinates (clientX, clientY)
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const [colorMap, normalMap] = useLoader(THREE.TextureLoader, [
+    "/2k_ceres_fictional.jpg", // diffuse/color texture
+    "/2k_earth_normal_map.jpg",  // normal map
+  ]);
+  
 
   const a = semiMajorAxis ?? orbitRadius;
   const e = eccentricity ?? 0;
@@ -100,6 +109,8 @@ export default function Planet({
     const y = r * Math.sin(ν);
 
     planetRef.current.position.set(x, y, 0);
+
+    planetRef.current.rotation.y += rotationSpeed * 0.01;
   });
 
   // Close tooltip when clicking outside (with race guard)
@@ -223,7 +234,13 @@ export default function Planet({
       {/* Planet sphere */}
       <mesh ref={planetRef}>
         <sphereGeometry args={[planetRadius, 32, 32]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial 
+          color={color}
+          map={colorMap}
+          normalMap={normalMap}
+          metalness={0.2}
+          roughness={0.9}
+        />
       </mesh>
     </group>
   );
